@@ -1,0 +1,301 @@
+{% load staticfiles %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.6-rc.0/css/select2.min.css" rel="stylesheet" />
+
+
+    <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+  
+    <!-- Documentation extras -->
+    <style>
+        .invisible {
+        visibility: hidden
+      }
+        .hidden {
+            display:none
+        }
+        .center {
+            display: block;
+            margin: auto;
+        }
+        .container {
+            max-width: 90% !important;
+        }
+    </style>
+    
+</head>
+
+<body class="profile-page ">
+    <nav class="navbar navbar-color-on-scroll navbar-transparent    fixed-top  navbar-expand-sm " color-on-scroll="100" id="sectionsNav">
+        <div class="container">
+            <div class="navbar-translate">
+                <a class="navbar-brand" href="#">Dr.MAS</a>
+                <button class="navbar-toggler" type="button" data-toggle="collapse" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                    <span class="navbar-toggler-icon"></span>
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+            </div>
+            <div class="collapse navbar-collapse">
+                <ul class="navbar-nav ml-auto">
+                    
+                    <li class="nav-item">
+                        <li>
+                            <a href="{% url 'logout' %}" class="navbar-brand">
+                        Logout
+                            </a>
+                        </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+    {% if user.is_authenticated %}
+    <div class="page-header header-filter" data-parallax="true" style="background-image: url('{% static "images/background.jpg" %}');"></div>
+    <div class="main main-raised">
+        <div class="profile-content">
+            <div class="container">
+                <div class="row">
+                    <div class="col-md-6 ml-auto mr-auto">
+                        <div class="profile">
+                            
+                            <div class="name">
+                                <h3 class="title">{{user.username}}</h3>
+                                <h6>Sex:{{user.sex}} age:{{user.age}}</h6>
+                                
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row" style="padding-top:50px; padding-bottom:200px;">
+                        <div class="info" id="suggestion-box" style="display:none; position: absolute; left:75%; top:5%; z-index: 10;">
+                            <div class="icon icon-primary text-center">
+                                <i class="material-icons">info</i>
+                            </div>
+                            <h4 class="info-title">Do you also have any of these?</h4>
+                            <p id="suggestion-list">Click to select<br></p>
+                            <p style="text-align: right;">
+                            <i class="material-icons hidden" data-page=1 id="prev" style="cursor: pointer;">navigate_before</i>
+                            <i class="material-icons" data-page=1 id="next" style="cursor: pointer;">navigate_next</i>
+                            </p>
+
+                        </div>
+                    <div class="col-md-4 ml-auto mr-auto text-center">
+                    <h4>Hello {{user.username}}, Please Specify Your Symptoms</h4>
+                        <div>
+        <select class="js-example-basic-multiple" name="states" multiple="multiple" style="width:300px">
+                                {% for sym in symptoms %} {% if sym.sex == '' or sym.sex == user.allusers.sex %}
+        <option value={{sym.syd}}>{{sym.symptoms}}</option>
+                                {% endif %} {% endfor %}
+</select>
+                        </div>
+
+                        <div class="hidden" id="warning">
+     <h4>Please add atleast 2 symptoms</h4>
+</div>
+                        <div class="hidden" id="alert">
+     <h4>Add more symptoms.Matching diseases not found</h4>
+</div>
+ <div class="invisible" id="diagnosis">
+   <h3>Possible Diagnoses:-</h3>
+                            <div class="col-md-8 ml-auto mr-auto">
+    <span id="loader">Diagnosing.....</span>
+    
+    <ul id="diagnosis-list" class="invisible"></ul>
+ </div>       
+</div>
+                    </div>
+                </div>
+{% else %}
+<p>You are not logged in</p>
+  <a href="{% url 'login' %}">login</a> |
+  <a href="{% url 'signup' %}">signup</a>
+  {% endif %}
+                <footer class="footer">
+        <div class="container">
+            
+            <div class="copyright pull-right">
+                &copy;
+                <script>
+                    document.write(new Date().getFullYear())
+                            </script>, made with
+                            <i class="material-icons">favorite</i>
+                for a better world.
+            </div>
+        </div>
+    </footer>
+    <!--   Core JS Files   -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.6-rc.0/js/select2.min.js"></script>
+    <script>
+                    $(document).ready(function () {
+          //Setup CSRF token for ajax requests
+          $('#change').hide()
+                        $('#pic').hover(function () {
+            $('#change').show()
+          });
+          
+          
+                        function getCookie(name) {
+            var cookieValue = null;
+            if (document.cookie && document.cookie != '') {
+                var cookies = document.cookie.split(';');
+                for (var i = 0; i < cookies.length; i++) {
+                    var cookie = jQuery.trim(cookies[i]);
+                    if (cookie.substring(0, name.length + 1) == (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+        $.ajaxSetup({ 
+                            beforeSend: function (xhr, settings) {
+                if (!(/^http:.*/.test(settings.url) || /^https:.*/.test(settings.url))) {
+                    xhr.setRequestHeader("X-CSRFToken", getCookie('csrftoken'));
+                }
+            } 
+        });
+        var pages = 1;
+    $('.js-example-basic-multiple').select2();
+                        $(document).on('click', '.suggestion', function(){
+                            var selectedSuggestion = $(this).attr('id');
+                            var selectedSymptoms = $('.js-example-basic-multiple').val();
+                            selectedSymptoms.push(selectedSuggestion);
+                            $('.js-example-basic-multiple').val(selectedSymptoms);
+                            $('.js-example-basic-multiple').trigger('change');
+                        })
+      
+                        $('.js-example-basic-multiple').change(function () {
+                            $('#suggestion-list').html('Click to select<br>');
+      $.ajax({
+                                url: "predict/",
+                                method: "post",
+                                data: {
+        symptoms: $('.js-example-basic-multiple').val(),
+      },
+                                success: function (data) {
+                                    var index = 0;
+                                    data.forEach(function (disease, suggestionIndex) {
+                                        pages = Math.ceil(data.length / 10);
+                                        if(pages > 1){
+                                            $('#next').removeClass('hidden');
+                                        }
+                                        else{
+                                            $('#next').addClass('hidden');
+                                        }
+                                        $('#next').attr('data-page', 1);
+                                        $('#prev').attr('data-page', 1);
+                                        $('#prev').addClass('hidden');
+                                        if (disease.sex == disease.user || disease.sex == '') {
+                                            index++;
+                                            var suggestionLi = $('<span class="suggestion-span"><a href="javascript:void(0)" class="suggestion text-dark" id="' + disease.id + '">' + disease.name + '</a><br></span>');
+                                            if(index > 10){
+                                              suggestionLi.addClass('hidden');
+                                              suggestionLi.attr('data-page', Math.ceil((index/10)));
+                                            }
+                                            else{
+                                            suggestionLi.attr('data-page', 1);
+                                            }
+                                            $('#suggestion-list').append(suggestionLi);
+                                        }
+            });
+                                    if(data && data.length){
+                                        $('#suggestion-box').fadeIn();
+                                    }
+                                    else{
+                                        $('#suggestion-box').fadeOut();
+            }
+      }
+      });
+      $('#diagnosis-list').html('');
+                            var symArray = $('.js-example-basic-multiple').val();
+                            if (symArray.length >= 2) {
+      
+      $('#diagnosis').removeClass('invisible');
+                                $('#warning').addClass('hidden');
+                                $('#alert').addClass('hidden');
+                                $('#loader').removeClass('hidden');
+      $.ajax({
+                                    url: "diagnose/",
+                                    method: "post",
+                                    data: {
+        symptoms: $('.js-example-basic-multiple').val(),
+        name: 'najmathummer'
+      },
+                                    success: function (data) {
+                                        data.forEach(function (disease) {
+                                            $('#diagnosis-list').append('<li>' + '<a href="' + disease.des + '"' + 'target="_blank">' + disease.name + '</a>' + '</li>')
+        });
+                                        if ($("#diagnosis-list li").length == 0) {
+                                            $('#alert').removeClass('hidden');
+          $('#diagnosis').addClass('invisible');
+            
+          }
+        $('#diagnosis-list').removeClass('invisible');
+                                        $('#loader').addClass('hidden');
+      }
+                                });
+                            }
+                            else if (symArray.length == 1) {
+                                $('#alert').addClass('hidden');
+                                $('#warning').removeClass('hidden');
+          $('#diagnosis').addClass('invisible');
+      }
+                            else {
+        $('#diagnosis').addClass('invisible');
+                                $('#warning').addClass('hidden');
+      }
+    });
+    
+    $('#next, #prev').on('click', function(){
+        var currentPage = parseInt($(this).attr('data-page'));
+        var newPage;
+        if($(this).attr('id') == 'next'){
+            newPage = currentPage + 1;
+        }
+        else{
+            newPage = currentPage - 1;
+        }
+        if(newPage > pages || newPage < 1){
+            return;
+        }
+        $('.suggestion-span').each(function(){
+            if($(this).attr('data-page') == newPage.toString()){
+                $(this).removeClass('hidden');
+            }
+            else{
+                $(this).addClass('hidden');
+            }
+      });
+        if(newPage == 1){
+            $('#prev').addClass('hidden');
+        }
+        else{
+          $('#prev').removeClass('hidden');
+        }
+        console.log('Clicked :' + $(this).attr('id'));
+        console.log('Current: ' + currentPage + ', Pages: ' + pages + ', New: ' + newPage);
+        
+        if(newPage == pages){
+            $('#next').addClass('hidden');
+        }
+        else{
+          $('#next').removeClass('hidden');
+        }
+        $('#next').attr('data-page', newPage);
+        $('#prev').attr('data-page', newPage);
+    });
+}); //closing of ready
+      </script>
+
+    
+</body>
+
+</html>
